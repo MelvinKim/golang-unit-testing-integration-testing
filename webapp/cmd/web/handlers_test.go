@@ -23,6 +23,8 @@ func Test_application_handlers(t *testing.T) {
 	ts := httptest.NewTLSServer(routes)
 	defer ts.Close()
 
+	pathToTemplates = "./../../templates"
+
 	// range through the tests
 	for _, e := range theTests {
 		resp, err := ts.Client().Get(ts.URL + e.url)
