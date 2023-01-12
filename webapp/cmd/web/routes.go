@@ -10,8 +10,9 @@ import (
 func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 
-	// register middlware
+	// register middlware, --> middlewares should go before the registered routes
 	mux.Use(middleware.Recoverer)
+	mux.Use(app.addIpToContext)
 
 	// register routes
 	mux.Get("/", app.Home)
