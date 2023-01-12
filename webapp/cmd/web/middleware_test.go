@@ -70,7 +70,7 @@ func Test_application_ipFromContext(t *testing.T) {
 	// get context
 	ctx := context.Background()
 
-	// put something in the context
+	// put something in the contextW
 	ctx = context.WithValue(ctx, contextUserKey, "192.0.0.1")
 
 	// call the ipFromContext function
