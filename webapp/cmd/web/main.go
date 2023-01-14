@@ -16,11 +16,11 @@ func main() {
 	// holds information that we want to share through out the applucation
 	app := application{}
 
+	// get a session Manager --> should happen before invoking the routes
+	app.Session = getSession()
+
 	// get application routes
 	mux := app.routes()
-
-	// get a session Manager
-	app.Session = getSession()
 
 	// print out a message, (just to say the application is starting) :)
 	log.Println("starting server on port 8080...")
