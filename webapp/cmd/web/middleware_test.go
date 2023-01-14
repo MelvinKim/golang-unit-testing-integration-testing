@@ -21,8 +21,6 @@ func Test_application_addIPToContext(t *testing.T) {
 		{"", "", "hello:world", false},
 	}
 
-	var app application
-
 	// create a dummy hanlder that we will use to check the context
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// make sure that the value exists in the context
@@ -65,7 +63,7 @@ func Test_application_addIPToContext(t *testing.T) {
 
 func Test_application_ipFromContext(t *testing.T) {
 	// create an app variable of type application
-	var app application
+	// var app application
 
 	// get context
 	ctx := context.Background()
