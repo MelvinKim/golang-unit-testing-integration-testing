@@ -13,6 +13,7 @@ func (app *application) routes() http.Handler {
 	// register middlware, --> middlewares should go before the registered routes
 	mux.Use(middleware.Recoverer)
 	mux.Use(app.addIpToContext)
+	mux.Use(app.Session.LoadAndSave) // add a middleware to persist sessions between requests
 
 	// register routes
 	mux.Get("/", app.Home)

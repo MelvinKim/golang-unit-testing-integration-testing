@@ -3,9 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/alexedwards/scs/v2"
 )
 
-type application struct{}
+type application struct {
+	Session *scs.SessionManager
+}
 
 func main() {
 	// set up an app config --> variable that holds the application configuration
@@ -14,6 +18,9 @@ func main() {
 
 	// get application routes
 	mux := app.routes()
+
+	// get a session Manager
+	app.Session = getSession()
 
 	// print out a message, (just to say the application is starting) :)
 	log.Println("starting server on port 8080...")
