@@ -25,8 +25,6 @@ func Test_application_handlers(t *testing.T) {
 	ts := httptest.NewTLSServer(routes)
 	defer ts.Close()
 
-	pathToTemplates = "./../../templates"
-
 	// range through the tests
 	for _, e := range theTests {
 		resp, err := ts.Client().Get(ts.URL + e.url)
@@ -38,33 +36,6 @@ func Test_application_handlers(t *testing.T) {
 		if resp.StatusCode != e.expectedStatusCode {
 			t.Errorf("for %s: expected status %d, but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
 		}
-	}
-}
-
-func TestAppHomeOld(t *testing.T) {
-	// create a request
-	req, _ := http.NewRequest("GET", "/", nil)
-
-	req = addContextAndSessionToRequest(req, app)
-
-	// we need a response
-	rr := httptest.NewRecorder()
-
-	// create the handler
-	handler := http.HandlerFunc(app.Home)
-
-	// server the request
-	handler.ServeHTTP(rr, req)
-
-	// check status code
-	if rr.Code != http.StatusOK {
-		t.Errorf("TestAppHome returned wrong status code,expected %d, but got %d", http.StatusOK, rr.Code)
-	}
-
-	// check to ensure that the body contains a certain text that should be there
-	body, _ := io.ReadAll(rr.Body)
-	if !strings.Contains(string(body), `<small>From session:`) {
-		t.Error("did not find correct text in html")
 	}
 }
 
@@ -109,6 +80,24 @@ func TestAppHome(t *testing.T) {
 		if !strings.Contains(string(body), e.expectedHTML) {
 			t.Errorf("%s: did not find %s in response body", e.name, e.expectedHTML)
 		}
+	}
+}
+
+// Test a situation where i have a bad template
+func TestApp_renderWithBadTemplate(t *testing.T) {
+	// set pathToTemplates to a location with a bad template
+	pathToTemplates = "./testdata/"
+
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	req = addContextAndSessionToRequest(req, app)
+
+	rr := httptest.NewRecorder()
+
+	err := app.render(rr, req, "bad.page.gohtml", &TemplateData{})
+
+	if err == nil {
+		t.Error("expected error from bad template, but did not get one")
 	}
 }
 
