@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -23,6 +22,10 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 		app.Session.Put(r.Context(), "test", "Hit this page at "+time.Now().UTC().String())
 	}
 	_ = app.render(w, r, "home.page.gohtml", &TemplateData{Data: td})
+}
+
+func (app *application) Profile(w http.ResponseWriter, r *http.Request) {
+	_ = app.render(w, r, "profile.page.gohtml", &TemplateData{})
 }
 
 type TemplateData struct {
@@ -63,7 +66,10 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	form.Required("email", "password")
 
 	if !form.Valid() {
-		fmt.Fprint(w, "failed input validation")
+		// put some data into the session
+		app.Session.Put(r.Context(), "error", "invalid login credentials")
+		// redirect to the login page, with an error message
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -73,12 +79,22 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := app.DB.GetUserByEmail(email)
 	if err != nil {
-		log.Println(err)
+		app.Session.Put(r.Context(), "error", "invalid login!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
 
-	log.Println("From database: ", user.FirstName)
+	log.Println(password, user.FirstName)
 
-	log.Println(email, password)
+	// after getting the user, we want to authenticate
+	// if not authenticated then redirect with error
 
-	fmt.Fprint(w, email)
+	// prevent fixation attack --> renew the session token
+	_ = app.Session.RenewToken(r.Context())
+
+	// store success message in the session
+
+	// redirect to a profile page
+	app.Session.Put(r.Context(), "flash", "Successfully logged in!")
+	http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
 }
