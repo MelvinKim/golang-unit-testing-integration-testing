@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/gob"
 	"flag"
 	"log"
 	"net/http"
+	"webapp/pkg/data"
 	"webapp/pkg/db"
 
 	"github.com/alexedwards/scs/v2"
@@ -17,6 +19,9 @@ type application struct {
 }
 
 func main() {
+	// register user defined types (eg Structs), so as to use store them in the session
+	gob.Register(data.User{})
+
 	// set up an app config --> variable that holds the application configuration
 	// holds information that we want to share through out the applucation
 	app := application{}

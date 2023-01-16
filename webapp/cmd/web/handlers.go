@@ -94,17 +94,31 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(password, user.FirstName)
-
 	// after getting the user, we want to authenticate
 	// if not authenticated then redirect with error
+	if !app.authenticate(r, user, password) {
+		app.Session.Put(r.Context(), "error", "invalid login!")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 
-	// prevent fixation attack --> renew the session token
+	// prevent fixation attack (OWASP security guidelines) --> renew the session token
 	_ = app.Session.RenewToken(r.Context())
 
 	// store success message in the session
-
 	// redirect to a profile page
 	app.Session.Put(r.Context(), "flash", "Successfully logged in!")
 	http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
+}
+
+// authenticate compares provided password and the hashed user password
+func (app *application) authenticate(r *http.Request, user *data.User, password string) bool {
+	if valid, err := user.PasswordMatches(password); err != nil || !valid {
+		return false
+	}
+
+	// store authenticated user in the session
+	app.Session.Put(r.Context(), "user", user)
+
+	return true
 }
