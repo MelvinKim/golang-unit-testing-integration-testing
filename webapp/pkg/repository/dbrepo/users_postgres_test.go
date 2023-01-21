@@ -242,3 +242,20 @@ func TestPostgresDBRepoDeleteUser(t *testing.T) {
 		t.Errorf("error while deleting a user. expected length to be %d, but got %d", 1, len(users))
 	}
 }
+
+// reset password
+func TestPostgresDBRepoResetPassword(t *testing.T) {
+	err := testRepo.ResetPassword(1, "password") // use id=1, because we have already deleted the second user in the prior test
+	if err != nil {
+		t.Errorf("error resetting password for user: %d", 2)
+	}
+	// check to ensure that the password has been updated
+	user, _ := testRepo.GetUser(1)
+	matches, err := user.PasswordMatches("password")
+	if err != nil {
+		t.Error(err)
+	}
+	if !matches {
+		t.Errorf("password should match 'password', but does not")
+	}
+}
