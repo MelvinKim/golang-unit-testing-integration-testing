@@ -259,3 +259,29 @@ func TestPostgresDBRepoResetPassword(t *testing.T) {
 		t.Errorf("password should match 'password', but does not")
 	}
 }
+
+// insert user image
+func TestPostgresDBRepoInsertUserImage(t *testing.T) {
+	var image data.UserImage
+	image.UserID = 1
+	image.FileName = "test.jpg"
+	image.CreatedAt = time.Now()
+	image.UpdatedAt = time.Now()
+
+	newID, err := testRepo.InsertUserImage(image)
+	if err != nil {
+		t.Errorf("error while inserting user image: %s", err)
+	}
+	if newID != 1 { // since it's the first insertion --> first record
+		t.Errorf("expected user image ID to be %d, but got %d: ", 1, newID)
+	}
+
+	// assign image USERID to a user that doesn't exists in the DB
+	image.UserID = 100
+	_, err = testRepo.InsertUserImage(image)
+	if err == nil {
+		t.Errorf("expected error for a user id: %v which doesn't exists, but didn't get any", image.UserID)
+	}
+
+	//TODO: refactor this and other tests to table driven tests
+}
