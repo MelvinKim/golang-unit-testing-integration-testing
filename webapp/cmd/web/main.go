@@ -13,50 +13,37 @@ import (
 )
 
 type application struct {
-	DSN string
-	// DB      *sql.DB
-	// DB      db.PostgresConn
-	DB      repository.DatabaseRepo //1. specify the interface
+	DSN     string
+	DB      repository.DatabaseRepo
 	Session *scs.SessionManager
 }
 
 func main() {
-	// register user defined types (eg Structs), so as to use store them in the session
 	gob.Register(data.User{})
 
-	// set up an app config --> variable that holds the application configuration
-	// holds information that we want to share through out the applucation
+	// set up an app config
 	app := application{}
 
-	// read something from the cmd
-	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5433 user=postgres password=postgres dbname=users sslmode=disable timezone=UTC connect_timeout=5", "Postgres connection")
+	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users sslmode=disable timezone=UTC connect_timeout=5", "Posgtres connection")
 	flag.Parse()
 
-	// try to connect to the database
 	conn, err := app.connectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	app.DB = &dbrepo.PostgresDBRepo{DB: conn} //2.specify the struct
+	app.DB = &dbrepo.PostgresDBRepo{DB: conn}
 
-	// get a session Manager --> should happen before invoking the routes
+	// get a session manager
 	app.Session = getSession()
 
-	// get application routes
-	mux := app.routes()
-
-	// print out a message, (just to say the application is starting) :)
-	log.Println("starting server on port 8080...")
+	// print out a message
+	log.Println("Starting server on port 8080...")
 
 	// start the server
-	err = http.ListenAndServe(":8080", mux)
+	err = http.ListenAndServe(":8080", app.routes())
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
-// advantages of 3rd routing packages
-// faster that standard http library
-// adds a lot of functionality with very little effort

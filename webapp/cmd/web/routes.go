@@ -10,18 +10,21 @@ import (
 func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 
-	// register middlware, --> middlewares should go before the registered routes
+	// register middleware
 	mux.Use(middleware.Recoverer)
-	mux.Use(app.addIpToContext)
-	mux.Use(app.Session.LoadAndSave) // add a middleware to persist sessions between requests
+	mux.Use(app.addIPToContext)
+	mux.Use(app.Session.LoadAndSave)
 
 	// register routes
 	mux.Get("/", app.Home)
 	mux.Post("/login", app.Login)
 
-	mux.Get("/user/profile", app.Profile)
+	mux.Route("/user", func(mux chi.Router){
+		mux.Use(app.auth)
+		mux.Get("/profile", app.Profile)
+	})
 
-	// serve static assets
+	// static assets
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
 

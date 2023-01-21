@@ -7,13 +7,12 @@ import (
 	"testing"
 )
 
-// Test to check whether the Form has a particular field
 func TestForm_Has(t *testing.T) {
 	form := NewForm(nil)
 
 	has := form.Has("whatever")
 	if has {
-		t.Errorf("form shows it has field %s, when it should not", "whatever")
+		t.Error("form shows has field when it should not")
 	}
 
 	postedData := url.Values{}
@@ -22,19 +21,18 @@ func TestForm_Has(t *testing.T) {
 
 	has = form.Has("a")
 	if !has {
-		t.Errorf("shows form doesn't have the field %s, when it should", "a")
+		t.Error("shows form does not have field when it should")
 	}
 }
 
-// Test to check for required fields
 func TestForm_Required(t *testing.T) {
 	r := httptest.NewRequest("POST", "/whatever", nil)
 	form := NewForm(r.PostForm)
 
-	// create required fields
 	form.Required("a", "b", "c")
+
 	if form.Valid() {
-		t.Errorf("shows form valid when required fields %s, %s and %s are missing", "a", "b", "c")
+		t.Error("form shows valid when required fields are missing")
 	}
 
 	postedData := url.Values{}
@@ -48,7 +46,7 @@ func TestForm_Required(t *testing.T) {
 	form = NewForm(r.PostForm)
 	form.Required("a", "b", "c")
 	if !form.Valid() {
-		t.Errorf("shows post doesn't have required fields %s, %s and %s when it does", "a", "b", "c")
+		t.Error("shows post does not have required fields, when it does")
 	}
 }
 
@@ -57,7 +55,7 @@ func TestForm_Check(t *testing.T) {
 
 	form.Check(false, "password", "password is required")
 	if form.Valid() {
-		t.Errorf("Valid() returns %s, and it should be %s, when calling Check()", "false", "true")
+		t.Error("Valid() returns false, and it should be true when calling Check()")
 	}
 }
 
@@ -67,7 +65,7 @@ func TestForm_ErrorGet(t *testing.T) {
 	s := form.Errors.Get("password")
 
 	if len(s) == 0 {
-		t.Error("should have an error returned from Get, but does not")
+		t.Error("should have an error returned from Get, but do not")
 	}
 
 	s = form.Errors.Get("whatever")

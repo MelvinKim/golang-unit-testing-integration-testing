@@ -15,24 +15,18 @@ func (app *application) ipFromContext(ctx context.Context) string {
 	return ctx.Value(contextUserKey).(string)
 }
 
-func (app *application) addIpToContext(next http.Handler) http.Handler {
+func (app *application) addIPToContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// we need to have a context to work with
 		var ctx = context.Background()
-
 		// get the ip (as accurately as possible)
-		// ip := r.RemoteAddr, returns the IP address of the request , not always accurate especially when the client is behind a proxy
 		ip, err := getIP(r)
 		if err != nil {
-			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			ip, _, _ = net.SplitHostPort(r.RemoteAddr)
 			if len(ip) == 0 {
 				ip = "unknown"
 			}
-
-			// add the IP value to the context
 			ctx = context.WithValue(r.Context(), contextUserKey, ip)
 		} else {
-			// add the IP value to the context
 			ctx = context.WithValue(r.Context(), contextUserKey, ip)
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -50,7 +44,6 @@ func getIP(r *http.Request) (string, error) {
 		return "", fmt.Errorf("userip: %q is not IP:port", r.RemoteAddr)
 	}
 
-	// check if the IP  is coming from a proxy
 	forward := r.Header.Get("X-Forwarded-For")
 	if len(forward) > 0 {
 		ip = forward
@@ -61,4 +54,15 @@ func getIP(r *http.Request) (string, error) {
 	}
 
 	return ip, nil
+}
+
+func (app *application) auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !app.Session.Exists(r.Context(), "user") {
+			app.Session.Put(r.Context(), "error", "Log in first!")
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

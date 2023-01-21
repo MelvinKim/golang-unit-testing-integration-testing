@@ -9,12 +9,13 @@ import (
 )
 
 func Test_application_routes(t *testing.T) {
-	var registered = []struct {
-		route  string
+	var registered = []struct{
+		route string
 		method string
 	}{
 		{"/", "GET"},
 		{"/login", "POST"},
+		{"/user/profile", "GET"},
 		{"/static/*", "GET"},
 	}
 
@@ -33,7 +34,7 @@ func Test_application_routes(t *testing.T) {
 func routeExists(testRoute, testMethod string, chiRoutes chi.Routes) bool {
 	found := false
 
-	_ = chi.Walk(chiRoutes, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+	_ = chi.Walk(chiRoutes, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		if strings.EqualFold(method, testMethod) && strings.EqualFold(route, testRoute) {
 			found = true
 		}
