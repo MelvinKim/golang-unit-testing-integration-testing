@@ -208,7 +208,7 @@ func TestPostgresDBRepoGetUserByEmail(t *testing.T) {
 }
 
 // Update a user
-func TestPostgressDBRepoUpdateUser(t *testing.T) {
+func TestPostgresDBRepoUpdateUser(t *testing.T) {
 	user, _ := testRepo.GetUser(2)
 	user.FirstName = "Jane"
 	user.Email = "jane@smith.com"
@@ -221,5 +221,24 @@ func TestPostgressDBRepoUpdateUser(t *testing.T) {
 	user, _ = testRepo.GetUser(2)
 	if user.FirstName != "Jane" || user.Email != "jane@smith.com" {
 		t.Errorf("error while updating user details. expected first name to be %s, but got %s. expected email to be %s but got %s", "Jane", user.FirstName, "janes@smith.com", user.Email)
+	}
+}
+
+// delete user
+func TestPostgresDBRepoDeleteUser(t *testing.T) {
+	err := testRepo.DeleteUser(2)
+	if err != nil {
+		t.Errorf("error while deleting user with id %d: %s", 2, err)
+	}
+
+	// try to get the deleted user
+	_, err = testRepo.GetUser(2)
+	if err == nil {
+		t.Errorf("expected an error while retrieving a user that has already been deleted but didn't get any")
+	}
+
+	users, _ := testRepo.AllUsers()
+	if len(users) != 1 {
+		t.Errorf("error while deleting a user. expected length to be %d, but got %d", 1, len(users))
 	}
 }
