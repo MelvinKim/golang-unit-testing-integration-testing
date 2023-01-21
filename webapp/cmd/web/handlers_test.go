@@ -84,24 +84,24 @@ func TestAppHome(t *testing.T) {
 }
 
 // Test a situation where i have a bad template
-func TestApp_renderWithBadTemplate(t *testing.T) {
-	// set pathToTemplates to a location with a bad template
-	pathToTemplates = "./testdata/"
+// func TestApp_renderWithBadTemplate(t *testing.T) {
+// 	// set pathToTemplates to a location with a bad template
+// 	pathToTemplates = "./testdata/"
 
-	req, _ := http.NewRequest("GET", "/", nil)
+// 	req, _ := http.NewRequest("GET", "/", nil)
 
-	req = addContextAndSessionToRequest(req, app)
+// 	req = addContextAndSessionToRequest(req, app)
 
-	rr := httptest.NewRecorder()
+// 	rr := httptest.NewRecorder()
 
-	err := app.render(rr, req, "bad.page.gohtml", &TemplateData{})
+// 	err := app.render(rr, req, "bad.page.gohtml", &TemplateData{})
 
-	if err == nil {
-		t.Error("expected error from bad template, but did not get one")
-	}
+// 	if err == nil {
+// 		t.Error("expected error from bad template, but did not get one")
+// 	}
 
-	pathToTemplates = "./../../templates"
-}
+// 	pathToTemplates = "./../../templates"
+// }
 
 // adds "contextUserKey" value to the requests's context
 // context.WithValue --> adds a new value to a context

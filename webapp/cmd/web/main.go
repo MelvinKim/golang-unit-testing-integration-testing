@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 	"webapp/pkg/data"
-	"webapp/pkg/db"
+	"webapp/pkg/repository"
+	"webapp/pkg/repository/dbrepo"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -14,7 +15,8 @@ import (
 type application struct {
 	DSN string
 	// DB      *sql.DB
-	DB      db.PostgresConn
+	// DB      db.PostgresConn
+	DB      repository.DatabaseRepo //1. specify the interface
 	Session *scs.SessionManager
 }
 
@@ -37,7 +39,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	app.DB = db.PostgresConn{DB: conn}
+	app.DB = &dbrepo.PostgresDBRepo{DB: conn} //2.specify the struct
 
 	// get a session Manager --> should happen before invoking the routes
 	app.Session = getSession()
