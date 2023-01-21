@@ -141,3 +141,37 @@ func TestPostgresDBRepoInsertUser(t *testing.T) {
 		t.Errorf("insert user returned wrong id. expected %d, but got %d", 1, id)
 	}
 }
+
+// Test get all users
+func TestPostgresDBRepoGetAllUsers(t *testing.T) {
+	users, err := testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("all users reports an error: %s", err)
+	}
+	if len(users) != 1 {
+		t.Errorf("all users reports wrong size; expected %d, but got %d", 1, len(users))
+	}
+
+	// insert another user and check the length of the result
+	testUser := data.User{
+		FirstName: "Jack",
+		LastName:  "Smith",
+		Email:     "admin@example.com",
+		Password:  "secret",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	_, _ = testRepo.InsertUser(testUser)
+
+	users, err = testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("get all users reports an error: %s", err)
+	}
+	if len(users) != 2 {
+		t.Errorf("all users reports wrong size after insert; expected %d, but got %d", 2, len(users))
+	}
+
+	// TODO: check if all users are sorted alphabetically --> eg when sorting by first name
+}
