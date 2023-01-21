@@ -156,7 +156,7 @@ func TestPostgresDBRepoGetAllUsers(t *testing.T) {
 	testUser := data.User{
 		FirstName: "Jack",
 		LastName:  "Smith",
-		Email:     "admin@example.com",
+		Email:     "jack@smith.com",
 		Password:  "secret",
 		IsAdmin:   1,
 		CreatedAt: time.Now(),
@@ -174,4 +174,35 @@ func TestPostgresDBRepoGetAllUsers(t *testing.T) {
 	}
 
 	// TODO: check if all users are sorted alphabetically --> eg when sorting by first name
+	// TODO: check to ensure that you can't insert users with the same email
+}
+
+// Getting individual users --> eg by email or ID
+func TestPostgresDBRepoGetUser(t *testing.T) {
+	user, err := testRepo.GetUser(1)
+	if err != nil {
+		t.Errorf("error getting user by ID: %s", err)
+	}
+	if user.Email != "admin@example.com" {
+		t.Errorf("wrong user returned by GetUser; expected %s, but got %s", "admin@example.com", user.Email)
+	}
+
+	// check for a user that doesn't exist
+	_, err = testRepo.GetUser(100)
+	if err == nil {
+		t.Errorf("no error reported when getting non existent user by ID: %d", 100)
+	}
+	// TODO: check for non-existent user ID eg 100
+}
+
+// Get individual users --> by email
+func TestPostgresDBRepoGetUserByEmail(t *testing.T) {
+	user, err := testRepo.GetUserByEmail("jack@smith.com")
+	if err != nil {
+		t.Errorf("error getting user by email: %s", err)
+	}
+	if user.ID != 2 {
+		t.Errorf("wrong ID returned by GetUserByEmail; expected %d, but got %d", 2, user.ID)
+	}
+	// TODO: check for a non-existent email
 }
