@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
+	"webapp/pkg/data"
 	"webapp/pkg/repository"
 
 	_ "github.com/jackc/pgconn"
@@ -81,6 +83,9 @@ func TestMain(m *testing.M) {
 		log.Fatalf("error creating tables in pg instance running on docker: %s", err)
 	}
 
+	// setup a database connection pool
+	testRepo = &PostgresDBRepo{DB: testDB}
+
 	// run the tests
 	code := m.Run()
 
@@ -113,5 +118,26 @@ func Test_pingDB(t *testing.T) {
 	err := testDB.Ping()
 	if err != nil {
 		t.Error("can not ping test pg instance running on docker")
+	}
+}
+
+// Test inserting a user
+func TestPostgresDBRepoInsertUser(t *testing.T) {
+	testUser := data.User{
+		FirstName: "Admin",
+		LastName:  "User",
+		Email:     "admin@example.com",
+		Password:  "secret",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	id, err := testRepo.InsertUser(testUser)
+	if err != nil {
+		t.Errorf("insert user returned an error: %s", err)
+	}
+	if id != 1 {
+		t.Errorf("insert user returned wrong id. expected %d, but got %d", 1, id)
 	}
 }
