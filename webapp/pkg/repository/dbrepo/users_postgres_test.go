@@ -1,3 +1,6 @@
+//go:build integration
+
+// (to run the tests --> go test -v -tags=<tag-name> . --> eg go test -v -tags=integration .)
 package dbrepo
 
 import (
