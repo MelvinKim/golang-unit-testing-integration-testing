@@ -206,3 +206,20 @@ func TestPostgresDBRepoGetUserByEmail(t *testing.T) {
 	}
 	// TODO: check for a non-existent email
 }
+
+// Update a user
+func TestPostgressDBRepoUpdateUser(t *testing.T) {
+	user, _ := testRepo.GetUser(2)
+	user.FirstName = "Jane"
+	user.Email = "jane@smith.com"
+
+	err := testRepo.UpdateUser(*user)
+	if err != nil {
+		t.Errorf("error while updating user with id %d: %s", 2, err)
+	}
+
+	user, _ = testRepo.GetUser(2)
+	if user.FirstName != "Jane" || user.Email != "jane@smith.com" {
+		t.Errorf("error while updating user details. expected first name to be %s, but got %s. expected email to be %s but got %s", "Jane", user.FirstName, "janes@smith.com", user.Email)
+	}
+}
