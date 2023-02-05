@@ -1,22 +1,31 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
+	"image"
+	"image/png"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"strings"
+	"sync"
 	"testing"
+	"webapp/pkg/data"
 )
 
 func Test_application_handlers(t *testing.T) {
 	var theTests = []struct {
-		name               string
-		url                string
-		expectedStatusCode int
-		expectedURL string
+		name                    string
+		url                     string
+		expectedStatusCode      int
+		expectedURL             string
 		expectedFirstStatusCode int
 	}{
 		{"home", "/", http.StatusOK, "/", http.StatusOK},
@@ -141,49 +150,48 @@ func addContextAndSessionToRequest(req *http.Request, app application) *http.Req
 	return req.WithContext(ctx)
 }
 
-
 func Test_app_Login(t *testing.T) {
-	var tests = []struct{
-		name string
-		postedData url.Values
+	var tests = []struct {
+		name               string
+		postedData         url.Values
 		expectedStatusCode int
-		expectedLoc string
+		expectedLoc        string
 	}{
 		{
 			name: "valid login",
 			postedData: url.Values{
-				"email": {"admin@example.com"},
+				"email":    {"admin@example.com"},
 				"password": {"secret"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/user/profile",
+			expectedLoc:        "/user/profile",
 		},
 		{
 			name: "missing form data",
 			postedData: url.Values{
-				"email": {""},
+				"email":    {""},
 				"password": {""},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 		{
 			name: "user not found",
 			postedData: url.Values{
-				"email": {"you@there.com"},
+				"email":    {"you@there.com"},
 				"password": {"password"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 		{
 			name: "bad credentials",
 			postedData: url.Values{
-				"email": {"admin@example.com"},
+				"email":    {"admin@example.com"},
 				"password": {"password"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 	}
 
@@ -208,4 +216,123 @@ func Test_app_Login(t *testing.T) {
 			t.Errorf("%s: no location header set", e.name)
 		}
 	}
+}
+
+func Test_app_UploadFiles(t *testing.T) {
+	// setup pipes: pr --> pipe read, pw --> pipe write
+	pr, pw := io.Pipe()
+
+	// create a new writer, of type *io.Writer
+	writer := multipart.NewWriter(pw)
+
+	// create a wait group
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	// simulate uploading a file, using a goroutine and our writer
+	go simulatePNGUpload("./testdata/img.png", writer, t, wg)
+
+	// read from the pipe which receives data
+	request := httptest.NewRequest("POST", "/", pr)
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+
+	// call app.UploadFiles()
+	uploadedFiles, err := app.UploadFiles(request, "./testdata/uploads/")
+	if err != nil {
+		t.Errorf("error while calling app.UploadFiles() %s", err)
+	}
+
+	// perform the tests
+	if _, err := os.Stat(fmt.Sprintf("./testdata/uploads/%s", uploadedFiles[0].OriginalFileName)); os.IsNotExist(err) {
+		t.Errorf("expected file to exist: %s", err.Error())
+	}
+
+	// clean up
+	_ = os.Remove(fmt.Sprintf("./testdata/uploads/%s", uploadedFiles[0].OriginalFileName))
+
+	wg.Wait()
+}
+
+// simulates uploading a file
+func simulatePNGUpload(fileToUpload string, writer *multipart.Writer, t *testing.T, wg *sync.WaitGroup) {
+	defer writer.Close() // prevents resource leaks
+	defer wg.Done()
+
+	// create the form data field 'file' with value being filename
+	part, err := writer.CreateFormFile("file", path.Base(fileToUpload))
+	if err != nil {
+		t.Errorf("error while doing writer.CreateFormFile(): %s", err)
+	}
+
+	// open the actual file
+	f, err := os.Open(fileToUpload)
+	if err != nil {
+		t.Errorf("error while opening file: %s", err)
+	}
+	defer f.Close()
+
+	// decode the image
+	img, _, err := image.Decode(f)
+	if err != nil {
+		t.Errorf("error while decoding image: %s", err)
+	}
+
+	// write the png to our io.Writer
+	err = png.Encode(part, img)
+	if err != nil {
+		t.Errorf("error while encoding image: %s", err)
+	}
+}
+
+func Test_app_UploadProfilePic(t *testing.T) {
+	uploadPath = "./testdata/uploads"
+	filePath := "./testdata/img.png"
+
+	// specify a field name for the form
+	fieldName := "file"
+
+	// create a bytes.Buffer to act as the request body
+	body := new(bytes.Buffer)
+
+	// create a new writer , (mw --> multiwriter)
+	mw := multipart.NewWriter(body)
+
+	// open file that you want to upload
+	file, err := os.Open(filePath)
+	if err != nil {
+		t.Fatalf("error while opening file ./testdata/img.png: %s", err)
+	}
+
+	// create a form file
+	w, err := mw.CreateFormFile(fieldName, filePath)
+	if err != nil {
+		t.Fatalf("error while creating a form file: %s", err)
+	}
+
+	// continuing withn building up a request
+	if _, err := io.Copy(w, file); err != nil {
+		t.Fatalf("error: %s", err)
+	}
+
+	mw.Close()
+
+	// building the test request
+	req := httptest.NewRequest(http.MethodPost, "/upload", body)
+	req = addContextAndSessionToRequest(req, app)
+	app.Session.Put(req.Context(), "user", data.User{ID: 1})
+	req.Header.Add("Content-Type", mw.FormDataContentType())
+
+	// building the test response
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(app.UploadProfilePic)
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusSeeOther {
+		t.Errorf("expected status %d while uploading profile pic, got %d", http.StatusSeeOther, rr.Code)
+	}
+
+	// cleanup
+	_ = os.Remove("./testdata/uploads/img.png")
 }

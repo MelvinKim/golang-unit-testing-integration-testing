@@ -19,9 +19,10 @@ func (app *application) routes() http.Handler {
 	mux.Get("/", app.Home)
 	mux.Post("/login", app.Login)
 
-	mux.Route("/user", func(mux chi.Router){
+	mux.Route("/user", func(mux chi.Router) {
 		mux.Use(app.auth)
 		mux.Get("/profile", app.Profile)
+		mux.Post("/upload-profile-pic", app.UploadProfilePic)
 	})
 
 	// static assets
